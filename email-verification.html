@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Confirmation - Skill Swap Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            animation: bounce 0.6s ease-out 0.3s both;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .success .icon {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .expired .icon {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+        }
+
+        .already-confirmed .icon {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+        }
+
+        .loading .icon {
+            background: linear-gradient(135deg, #9E9E9E, #757575);
+            color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 16px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            font-size: 16px;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: left;
+            margin-top: 24px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-box h3 {
+            color: #333;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+
+        .info-box ol {
+            color: #666;
+            line-height: 1.8;
+            padding-left: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">Skill Swap Platform</div>
+        
+        <div id="success" class="hidden success fade-in">
+            <div class="icon">✅</div>
+            <h1>Email Confirmed Successfully!</h1>
+            <p>Your email has been verified. You can now log in to your Skill Swap Platform account.</p>
+            <div class="info-box">
+                <h3>Next Steps:</h3>
+                <ol>
+                    <li>Open the Skill Swap Platform app</li>
+                    <li>Go to the login screen</li>
+                    <li>Sign in with your email and password</li>
+                </ol>
+            </div>
+        </div>
+
+        <div id="expired" class="hidden expired fade-in">
+            <div class="icon">⚠️</div>
+            <h1>Verification Link Expired</h1>
+            <p>The confirmation link is invalid or has expired. Click the button below to request a new verification email.</p>
+            <button onclick="resendVerification()" class="button" id="resendBtn">Resend Verification Email</button>
+            <div class="info-box">
+                <h3>Alternative:</h3>
+                <ol>
+                    <li>Open the Skill Swap Platform app</li>
+                    <li>Go to the login screen</li>
+                    <li>Click "Resend verification email" if available</li>
+                </ol>
+            </div>
+        </div>
+
+        <div id="already-confirmed" class="hidden already-confirmed fade-in">
+            <div class="icon">ℹ️</div>
+            <h1>Email Already Confirmed</h1>
+            <p>Your email is already verified. You can log in to your Skill Swap Platform account.</p>
+            <div class="info-box">
+                <h3>Next Steps:</h3>
+                <ol>
+                    <li>Open the Skill Swap Platform app</li>
+                    <li>Go to the login screen</li>
+                    <li>Sign in with your email and password</li>
+                </ol>
+            </div>
+        </div>
+
+        <div id="loading" class="loading fade-in">
+            <div class="icon">⏳</div>
+            <h1>Processing...</h1>
+            <p>Please wait while we verify your email confirmation.</p>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const status = urlParams.get('status');
+        const error = urlParams.get('error');
+        const type = urlParams.get('type');
+        const email = urlParams.get('email');
+
+        function resendVerification() {
+            const button = document.getElementById('resendBtn');
+            button.disabled = true;
+            button.textContent = 'Sending...';
+
+            // Call your resend verification API
+            fetch('https://eaipfjejmhadimwtukjd.supabase.co/functions/v1/resend-verification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: email })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    button.textContent = 'Email Sent!';
+                    setTimeout(() => {
+                        button.textContent = 'Resend Verification Email';
+                        button.disabled = false;
+                    }, 3000);
+                } else {
+                    alert('Failed to send email: ' + (data.error || 'Please try again'));
+                    button.textContent = 'Resend Verification Email';
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                alert('Failed to send email. Please try again.');
+                button.textContent = 'Resend Verification Email';
+                button.disabled = false;
+            });
+        }
+
+        function showStatus() {
+            const loading = document.getElementById('loading');
+            const success = document.getElementById('success');
+            const expired = document.getElementById('expired');
+            const alreadyConfirmed = document.getElementById('already-confirmed');
+
+            loading.classList.add('hidden');
+
+            let actualStatus = status;
+            
+            if (!actualStatus) {
+                if (type === 'signup' && !error) {
+                    actualStatus = 'success';
+                } else if (error) {
+                    actualStatus = 'expired';
+                } else {
+                    actualStatus = 'success';
+                }
+            }
+
+            if (actualStatus === 'success') {
+                success.classList.remove('hidden');
+            } else if (actualStatus === 'expired') {
+                expired.classList.remove('hidden');
+            } else if (actualStatus === 'already-confirmed') {
+                alreadyConfirmed.classList.remove('hidden');
+            } else {
+                expired.classList.remove('hidden');
+            }
+        }
+
+        // Show status after a short delay for better UX
+        setTimeout(showStatus, 1500);
+    </script>
+</body>
+</html> 
