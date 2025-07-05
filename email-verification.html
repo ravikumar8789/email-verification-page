@@ -178,6 +178,16 @@
             color: #667eea;
             margin-bottom: 30px;
         }
+
+        .debug-info {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -232,6 +242,12 @@
             <h1>Processing...</h1>
             <p>Please wait while we verify your email confirmation.</p>
         </div>
+
+        <!-- Debug info (remove in production) -->
+        <div id="debug" class="debug-info hidden">
+            <strong>Debug Info:</strong><br>
+            <span id="debug-content"></span>
+        </div>
     </div>
 
     <script>
@@ -240,13 +256,33 @@
         const error = urlParams.get('error');
         const type = urlParams.get('type');
         const email = urlParams.get('email');
+        const token = urlParams.get('token');
+        const refresh_token = urlParams.get('refresh_token');
+
+        // Debug function (remove in production)
+        function showDebugInfo() {
+            const debugDiv = document.getElementById('debug');
+            const debugContent = document.getElementById('debug-content');
+            debugContent.innerHTML = `
+                Status: ${status || 'null'}<br>
+                Error: ${error || 'null'}<br>
+                Type: ${type || 'null'}<br>
+                Email: ${email || 'null'}<br>
+                Token: ${token ? 'present' : 'null'}<br>
+                Refresh Token: ${refresh_token ? 'present' : 'null'}<br>
+                Full URL: ${window.location.href}
+            `;
+            debugDiv.classList.remove('hidden');
+        }
+
+        // Uncomment the line below to see debug info
+        // showDebugInfo();
 
         function resendVerification() {
             const button = document.getElementById('resendBtn');
             button.disabled = true;
             button.textContent = 'Sending...';
 
-            // Call your resend verification API
             fetch('https://eaipfjejmhadimwtukjd.supabase.co/functions/v1/resend-verification', {
                 method: 'POST',
                 headers: {
@@ -285,16 +321,36 @@
 
             let actualStatus = status;
             
+            // Improved logic to detect different scenarios
             if (!actualStatus) {
-                if (type === 'signup' && !error) {
+                // Check for specific error types
+                if (error) {
+                    // Handle various error types from Supabase
+                    if (error === 'already_confirmed' || 
+                        error === 'already_confirmed_email' ||
+                        error === 'email_already_confirmed') {
+                        actualStatus = 'already-confirmed';
+                    } else if (error === 'expired' || 
+                               error === 'token_expired' ||
+                               error === 'invalid_token') {
+                        actualStatus = 'expired';
+                    } else {
+                        // For any other error, default to expired
+                        actualStatus = 'expired';
+                    }
+                } else if (type === 'signup') {
+                    // If it's a signup flow and no error, assume success
                     actualStatus = 'success';
-                } else if (error) {
-                    actualStatus = 'expired';
+                } else if (token || refresh_token) {
+                    // If we have tokens, it's likely a successful verification
+                    actualStatus = 'success';
                 } else {
-                    actualStatus = 'success';
+                    // Default fallback
+                    actualStatus = 'expired';
                 }
             }
 
+            // Show the appropriate status
             if (actualStatus === 'success') {
                 success.classList.remove('hidden');
             } else if (actualStatus === 'expired') {
@@ -302,6 +358,7 @@
             } else if (actualStatus === 'already-confirmed') {
                 alreadyConfirmed.classList.remove('hidden');
             } else {
+                // Final fallback
                 expired.classList.remove('hidden');
             }
         }
