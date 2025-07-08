@@ -62,12 +62,9 @@
     <div class="title">Verifying...</div>
     <div class="desc">Please wait while we verify your email.</div>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
   <script>
     // --- CONFIG ---
-    const SUPABASE_URL = 'https://your-supabase-url.supabase.co'; // TODO: Replace with your Supabase URL
-    const SUPABASE_ANON_KEY = 'your-anon-key'; // TODO: Replace with your Supabase anon key
-    const EDGE_FUNCTION_URL = 'https://your-edge-function-url/verify-email-status'; // TODO: Replace with your Edge Function URL
+    const EDGE_FUNCTION_URL = 'https://eaipfjejmhadimwtukjd.supabase.co/functions/v1/email-status';
 
     // --- UI Helpers ---
     function showState({icon, iconClass, title, desc, showResend}) {
@@ -106,28 +103,20 @@
         });
         return;
       }
-      // Try Supabase getUser with token
-      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       try {
-        const { data, error } = await supabase.auth.getUser(token);
-        if (!error && data && data.user) {
+        const edgeRes = await fetch(EDGE_FUNCTION_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+        const edgeData = await edgeRes.json();
+        if (edgeData.status === 'verified') {
           showState({
             icon: '✅', iconClass: 'success',
             title: 'Email Verified!',
             desc: 'Your email has been successfully verified. You can now return to the app and log in.',
           });
-          return;
-        }
-        // If error, try Edge Function
-        const userId = decodeJwtSub(token);
-        if (!userId) throw new Error('Could not extract user ID from token.');
-        const edgeRes = await fetch(EDGE_FUNCTION_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, user_id: userId }),
-        });
-        const edgeData = await edgeRes.json();
-        if (edgeData.status === 'already_verified') {
+        } else if (edgeData.status === 'already_verified') {
           showState({
             icon: '🟢', iconClass: 'info',
             title: 'Already Verified',
@@ -153,16 +142,6 @@
           title: 'Verification Failed',
           desc: 'An error occurred during verification. Please try again or contact support.',
         });
-      }
-    }
-
-    // --- JWT Decode Helper ---
-    function decodeJwtSub(token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload.sub;
-      } catch {
-        return null;
       }
     }
 
