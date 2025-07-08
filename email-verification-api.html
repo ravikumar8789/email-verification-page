@@ -91,6 +91,16 @@
       history.replaceState(null, '', window.location.pathname);
     }
 
+    // --- JWT Decode Helper ---
+    function decodeJwtSub(token) {
+      try {
+        const payload = token.split('.')[1];
+        return JSON.parse(atob(payload)).sub;
+      } catch {
+        return null;
+      }
+    }
+
     // --- Main Verification Logic ---
     async function verifyEmail() {
       const token = getTokenFromHash();
@@ -103,20 +113,23 @@
         });
         return;
       }
+      const userId = decodeJwtSub(token);
+      if (!userId) {
+        showState({
+          icon: '❌', iconClass: 'error',
+          title: 'Invalid Token',
+          desc: 'Could not extract user information from the verification link.',
+        });
+        return;
+      }
       try {
         const edgeRes = await fetch(EDGE_FUNCTION_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token }),
+          body: JSON.stringify({ user_id: userId }),
         });
         const edgeData = await edgeRes.json();
-        if (edgeData.status === 'verified') {
-          showState({
-            icon: '✅', iconClass: 'success',
-            title: 'Email Verified!',
-            desc: 'Your email has been successfully verified. You can now return to the app and log in.',
-          });
-        } else if (edgeData.status === 'already_verified') {
+        if (edgeData.status === 'already_verified') {
           showState({
             icon: '🟢', iconClass: 'info',
             title: 'Already Verified',
@@ -128,6 +141,12 @@
             title: 'Verification Link Expired',
             desc: 'This verification link has expired. Please request a new verification email.',
             showResend: true,
+          });
+        } else if (edgeData.status === 'verified') {
+          showState({
+            icon: '✅', iconClass: 'success',
+            title: 'Email Verified!',
+            desc: 'Your email has been successfully verified. You can now return to the app and log in.',
           });
         } else {
           showState({
