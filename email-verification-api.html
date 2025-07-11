@@ -81,44 +81,28 @@
     }
 
     // --- Token Extraction & URL Cleanup ---
-    function getTokenFromHash() {
-      const hash = window.location.hash;
-      if (!hash) return null;
-      const match = hash.match(/access_token=([^&]+)/);
-      return match ? match[1] : null;
-    }
-    function cleanUrl() {
-      history.replaceState(null, '', window.location.pathname);
-    }
-
-    // --- JWT Decode Helper ---
-    function decodeJwtSub(token) {
-      try {
-        const payload = token.split('.')[1];
-        return JSON.parse(atob(payload)).sub;
-      } catch {
-        return null;
-      }
+    function getQueryParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
     }
 
     // --- Main Verification Logic ---
-    async function verifyEmail() {
-      const token = getTokenFromHash();
-      cleanUrl();
-      if (!token) {
+    async function verifyStatus() {
+      const error = getQueryParam('error');
+      const ref = getQueryParam('ref');
+      if (!error) {
         showState({
-          icon: '❌', iconClass: 'error',
-          title: 'Invalid Link',
-          desc: 'No verification token found in the link.',
+          icon: '✅', iconClass: 'success',
+          title: 'Email Verified!',
+          desc: 'Your email has been successfully verified. You can now return to the app and log in.',
         });
         return;
       }
-      const userId = decodeJwtSub(token);
-      if (!userId) {
+      if (!ref) {
         showState({
           icon: '❌', iconClass: 'error',
-          title: 'Invalid Token',
-          desc: 'Could not extract user information from the verification link.',
+          title: 'Invalid Link',
+          desc: 'No verification reference found in the link.',
         });
         return;
       }
@@ -126,7 +110,7 @@
         const edgeRes = await fetch(EDGE_FUNCTION_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId }),
+          body: JSON.stringify({ ref }),
         });
         const edgeData = await edgeRes.json();
         if (edgeData.status === 'already_verified') {
@@ -141,12 +125,6 @@
             title: 'Verification Link Expired',
             desc: 'This verification link has expired. Please request a new verification email.',
             showResend: true,
-          });
-        } else if (edgeData.status === 'verified') {
-          showState({
-            icon: '✅', iconClass: 'success',
-            title: 'Email Verified!',
-            desc: 'Your email has been successfully verified. You can now return to the app and log in.',
           });
         } else {
           showState({
@@ -170,7 +148,7 @@
     }
 
     // --- Start ---
-    verifyEmail();
+    verifyStatus();
   </script>
 </body>
 </html> 
