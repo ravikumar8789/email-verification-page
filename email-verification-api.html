@@ -28,7 +28,6 @@
       margin-bottom: 1rem;
     }
     .success { color: #2ecc40; }
-    .info { color: #0074d9; }
     .error { color: #ff4136; }
     .title {
       font-size: 1.5rem;
@@ -58,97 +57,43 @@
 </head>
 <body>
   <div class="container" id="content">
-    <div class="icon info">🔄</div>
+    <div class="icon success">🔄</div>
     <div class="title">Verifying...</div>
     <div class="desc">Please wait while we verify your email.</div>
   </div>
   <script>
-    // --- CONFIG ---
-    const EDGE_FUNCTION_URL = 'https://eaipfjejmhadimwtukjd.supabase.co/functions/v1/email-status';
-
-    // --- UI Helpers ---
-    function showState({icon, iconClass, title, desc, showResend}) {
+    function showState({icon, iconClass, title, desc}) {
       const content = document.getElementById('content');
       content.innerHTML = `
         <div class="icon ${iconClass}">${icon}</div>
         <div class="title">${title}</div>
         <div class="desc">${desc}</div>
-        ${showResend ? '<button class="btn" id="resendBtn">Resend Verification Email</button>' : ''}
       `;
-      if (showResend) {
-        document.getElementById('resendBtn').onclick = resendVerification;
-      }
     }
 
-    // --- Token Extraction & URL Cleanup ---
     function getQueryParam(name) {
       const params = new URLSearchParams(window.location.search);
       return params.get(name);
     }
 
-    // --- Main Verification Logic ---
-    async function verifyStatus() {
+    function verifyPage() {
       const error = getQueryParam('error');
-      const ref = getQueryParam('ref');
       if (!error) {
         showState({
           icon: '✅', iconClass: 'success',
           title: 'Email Verified!',
-          desc: 'Your email has been successfully verified. You can now return to the app and log in.',
+          desc: 'Your email has been successfully verified. You can now log in to the app.',
         });
-        return;
-      }
-      if (!ref) {
+      } else {
         showState({
           icon: '❌', iconClass: 'error',
-          title: 'Invalid Link',
-          desc: 'No verification reference found in the link.',
-        });
-        return;
-      }
-      try {
-        const edgeRes = await fetch(EDGE_FUNCTION_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ref }),
-        });
-        const edgeData = await edgeRes.json();
-        if (edgeData.status === 'already_verified') {
-          showState({
-            icon: '🟢', iconClass: 'info',
-            title: 'Already Verified',
-            desc: 'Your email was already verified. You can log in to the app.',
-          });
-        } else if (edgeData.status === 'expired') {
-          showState({
-            icon: '❌', iconClass: 'error',
-            title: 'Verification Link Expired',
-            desc: 'This verification link has expired. Please request a new verification email.',
-            showResend: true,
-          });
-        } else {
-          showState({
-            icon: '❓', iconClass: 'info',
-            title: 'Unknown Status',
-            desc: 'Could not determine verification status. Please try again or contact support.',
-          });
-        }
-      } catch (err) {
-        showState({
-          icon: '❌', iconClass: 'error',
-          title: 'Verification Failed',
-          desc: 'An error occurred during verification. Please try again or contact support.',
+          title: 'Verification Link Expired',
+          desc: 'This verification link has expired or is invalid. Please log in to the app to check your status or request a new verification email.',
         });
       }
     }
 
-    // --- Resend Verification (Placeholder) ---
-    function resendVerification() {
-      alert('Resend verification email functionality coming soon.');
-    }
-
-    // --- Start ---
-    verifyStatus();
+    verifyPage();
   </script>
 </body>
 </html> 
